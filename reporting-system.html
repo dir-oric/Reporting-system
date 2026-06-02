@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Reporting System</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f7f7f5;
+    --bg-tertiary: #f0f0ec;
+    --text-primary: #1a1a18;
+    --text-secondary: #6b6b67;
+    --text-tertiary: #a0a09c;
+    --border-light: rgba(0,0,0,0.1);
+    --border-mid: rgba(0,0,0,0.2);
+    --accent: #185fa5;
+    --accent-bg: #e6f1fb;
+    --accent-dark: #0c447c;
+    --success: #3b6d11;
+    --success-bg: #eaf3de;
+    --warning: #854f0b;
+    --warning-bg: #faeeda;
+    --danger: #a32d2d;
+    --danger-bg: #fcebeb;
+    --purple: #534ab7;
+    --purple-bg: #eeedfe;
+    --radius-sm: 6px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg-tertiary); color: var(--text-primary); font-size: 14px; line-height: 1.5; }
+
+  /* ── Auth Screen ── */
+  #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg-tertiary); }
+  .auth-card { background: var(--bg-primary); border-radius: var(--radius-lg); border: 0.5px solid var(--border-light); padding: 32px; width: 380px; }
+  .auth-card h1 { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+  .auth-card p { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
+  .auth-tabs { display: flex; gap: 0; margin-bottom: 20px; border: 0.5px solid var(--border-light); border-radius: var(--radius-md); overflow: hidden; }
+  .auth-tab { flex: 1; padding: 8px; text-align: center; font-size: 13px; cursor: pointer; background: var(--bg-secondary); color: var(--text-secondary); border: none; }
+  .auth-tab.active { background: var(--accent); color: #fff; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 11px; font-weight: 500; color: var(--text-secondary); margin-bottom: 5px; letter-spacing: 0.03em; text-transform: uppercase; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 8px 11px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-md); font-size: 13px; background: var(--bg-primary); color: var(--text-primary); outline: none; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(24,95,165,0.12); }
+  .form-group textarea { min-height: 70px; resize: vertical; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius-md); border: 0.5px solid var(--border-mid); background: var(--bg-primary); cursor: pointer; font-size: 13px; color: var(--text-primary); transition: background 0.12s; }
+  .btn:hover { background: var(--bg-secondary); }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { background: var(--accent-dark); }
+  .btn-block { width: 100%; justify-content: center; }
+  .btn-sm { padding: 5px 11px; font-size: 12px; }
+  .error-msg { font-size: 12px; color: var(--danger); background: var(--danger-bg); padding: 8px 11px; border-radius: var(--radius-md); margin-bottom: 12px; display: none; }
+  .setup-info { font-size: 11px; color: var(--text-secondary); margin-top: 16px; padding: 10px; background: var(--bg-secondary); border-radius: var(--radius-md); line-height: 1.6; }
+  .setup-info a { color: var(--accent); }
+
+  /* ── Config Screen ── */
+  #config-screen { display: none; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg-tertiary); }
+  .config-card { background: var(--bg-primary); border-radius: var(--radius-lg); border: 0.5px solid var(--border-light); padding: 32px; width: 520px; max-height: 90vh; overflow-y: auto; }
+  .config-card h1 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+  .config-card p { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+  .config-step { margin-bottom: 20px; }
+  .config-step h3 { font-size: 13px; font-weight: 600; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .step-num { width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; font-weight: 600; flex-shrink: 0; }
+  .code-block { background: #1e1e2e; color: #cdd6f4; font-family: 'Courier New', monospace; font-size: 11px; padding: 12px; border-radius: var(--radius-md); line-height: 1.8; margin-bottom: 10px; white-space: pre-wrap; word-break: break-all; }
+  .code-block .kw { color: #89b4fa; }
+  .code-block .str { color: #a6e3a1; }
+  .firebase-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* ── App Layout ── */
+  #app { display: none; height: 100vh; overflow: hidden; }
+  .layout { display: flex; height: 100%; }
+
+  /* Sidebar */
+  .sidebar { width: 230px; background: var(--bg-primary); border-right: 0.5px solid var(--border-light); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; }
+  .sidebar-logo { padding: 16px; border-bottom: 0.5px solid var(--border-light); }
+  .sidebar-logo h1 { font-size: 13px; font-weight: 600; letter-spacing: 0.01em; }
+  .sidebar-logo p { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+  .sidebar-user { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 0.5px solid var(--border-light); }
+  .user-avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent-bg); color: var(--accent); font-size: 10px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .user-info { flex: 1; min-width: 0; }
+  .user-info .name { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .user-info .role { font-size: 10px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sidebar-signout { color: var(--text-tertiary); cursor: pointer; font-size: 14px; flex-shrink: 0; }
+  .sidebar-signout:hover { color: var(--danger); }
+  .nav-section { padding: 6px 0; }
+  .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-tertiary); padding: 8px 14px 3px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 14px; cursor: pointer; font-size: 12px; color: var(--text-secondary); border-left: 2px solid transparent; }
+  .nav-item:hover { background: var(--bg-secondary); color: var(--text-primary); }
+  .nav-item.active { background: var(--accent-bg); color: var(--accent); border-left-color: var(--accent); font-weight: 500; }
+  .nav-item i { font-size: 14px; width: 16px; }
+  .nav-sub .nav-item { padding-left: 30px; font-size: 11px; }
+  .nav-bottom { margin-top: auto; border-top: 0.5px solid var(--border-light); padding: 6px 0; }
+
+  /* Main */
+  .main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; min-width: 0; }
+  .topbar { background: var(--bg-primary); border-bottom: 0.5px solid var(--border-light); padding: 11px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; position: sticky; top: 0; z-index: 10; }
+  .topbar-left { display: flex; align-items: center; gap: 10px; }
+  .topbar h2 { font-size: 15px; font-weight: 600; }
+  .badge { font-size: 11px; padding: 2px 9px; border-radius: 20px; font-weight: 500; }
+  .badge-blue { background: var(--accent-bg); color: var(--accent); }
+  .badge-green { background: var(--success-bg); color: var(--success); }
+  .badge-purple { background: var(--purple-bg); color: var(--purple); }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+  .month-nav { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; }
+  .month-nav button { width: 26px; height: 26px; border-radius: 50%; border: 0.5px solid var(--border-light); background: var(--bg-primary); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 12px; }
+  .month-nav button:hover { background: var(--bg-secondary); }
+  .content { padding: 18px 20px; flex: 1; }
+
+  /* Stats */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px; }
+  .stat-card { background: var(--bg-secondary); border-radius: var(--radius-md); padding: 13px 15px; }
+  .stat-card .slabel { font-size: 11px; color: var(--text-secondary); margin-bottom: 3px; }
+  .stat-card .sval { font-size: 22px; font-weight: 600; }
+  .stat-card .ssub { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+  .c-blue { color: var(--accent); } .c-green { color: var(--success); } .c-amber { color: var(--warning); } .c-purple { color: var(--purple); }
+
+  /* Cards */
+  .card { background: var(--bg-primary); border: 0.5px solid var(--border-light); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 14px; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 13px; }
+  .card-title { font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  .card-title i { font-size: 15px; color: var(--text-secondary); }
+
+  /* Member selector */
+  .member-bar { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+  .member-chip { display: flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; border: 0.5px solid var(--border-light); cursor: pointer; font-size: 12px; color: var(--text-secondary); background: var(--bg-primary); }
+  .member-chip:hover { background: var(--bg-secondary); }
+  .member-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .mini-avatar { width: 18px; height: 18px; border-radius: 50%; background: var(--accent-bg); color: var(--accent); font-size: 8px; font-weight: 600; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .member-chip.active .mini-avatar { background: rgba(255,255,255,0.25); color: #fff; }
+
+  /* Task table */
+  .task-header-row, .task-data-row { display: grid; grid-template-columns: 1fr 85px 85px 85px 90px; gap: 8px; padding: 5px 10px; align-items: center; }
+  .task-header-row { border-bottom: 0.5px solid var(--border-light); margin-bottom: 4px; }
+  .task-header-row span { font-size: 10px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.05em; text-transform: uppercase; text-align: center; }
+  .task-header-row span:first-child { text-align: left; }
+  .task-data-row { border: 0.5px solid var(--border-light); border-radius: var(--radius-md); margin-bottom: 6px; }
+  .task-data-row:hover { background: var(--bg-secondary); }
+  .task-name { font-size: 12px; font-weight: 500; }
+  .task-desc { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+  .prog-bar { height: 3px; border-radius: 2px; background: var(--bg-tertiary); margin-top: 4px; }
+  .prog-fill { height: 100%; border-radius: 2px; background: var(--accent); }
+  .task-num { font-size: 12px; text-align: center; }
+  .status-pill { font-size: 10px; padding: 3px 9px; border-radius: 20px; font-weight: 500; cursor: pointer; text-align: center; }
+  .s-todo { background: var(--bg-secondary); color: var(--text-secondary); }
+  .s-progress { background: var(--accent-bg); color: var(--accent); }
+  .s-done { background: var(--success-bg); color: var(--success); }
+  .empty-state { text-align: center; padding: 30px; color: var(--text-secondary); }
+  .empty-state i { font-size: 30px; margin-bottom: 8px; display: block; }
+  .empty-state p { font-size: 13px; }
+
+  /* Week tabs */
+  .week-tabs { display: flex; gap: 6px; margin-bottom: 14px; }
+  .week-tab { padding: 5px 16px; border-radius: 20px; border: 0.5px solid var(--border-light); font-size: 12px; cursor: pointer; background: var(--bg-primary); color: var(--text-secondary); }
+  .week-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .week-tab:hover:not(.active) { background: var(--bg-secondary); }
+
+  /* Daily log table */
+  .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .log-table th { padding: 6px 8px; font-size: 10px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.05em; text-transform: uppercase; text-align: center; border-bottom: 0.5px solid var(--border-light); }
+  .log-table th:first-child { text-align: left; }
+  .log-table td { padding: 5px 6px; border-bottom: 0.5px solid var(--border-light); text-align: center; vertical-align: middle; }
+  .log-table td:first-child { text-align: left; padding: 7px 8px; font-weight: 500; font-size: 12px; }
+  .log-table tfoot td { font-size: 11px; font-weight: 600; color: var(--text-secondary); padding: 7px 8px; border-top: 1px solid var(--border-mid); }
+  .time-inp { width: 60px; padding: 4px 6px; border: 0.5px solid var(--border-mid); border-radius: var(--radius-sm); font-size: 12px; text-align: center; background: var(--bg-primary); color: var(--text-primary); }
+  .time-inp:focus { outline: none; border-color: var(--accent); }
+
+  /* Modal */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.38); display: flex; align-items: center; justify-content: center; z-index: 200; }
+  .modal { background: var(--bg-primary); border-radius: var(--radius-lg); padding: 22px; width: 440px; max-height: 86vh; overflow-y: auto; border: 0.5px solid var(--border-light); }
+  .modal h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .modal h3 i { color: var(--text-secondary); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; border-top: 0.5px solid var(--border-light); padding-top: 14px; }
+  .divider { border: none; border-top: 0.5px solid var(--border-light); margin: 14px 0; }
+  .week-sum { font-size: 11px; color: var(--text-secondary); margin-top: 6px; }
+  .week-sum.ok { color: var(--success); }
+  .week-sum.warn { color: var(--warning); }
+
+  /* Dashboard */
+  .dash-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .dash-table th { padding: 8px 10px; font-size: 10px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.05em; text-transform: uppercase; border-bottom: 0.5px solid var(--border-light); text-align: left; }
+  .dash-table td { padding: 9px 10px; border-bottom: 0.5px solid var(--border-light); font-size: 12px; }
+  .dash-table tr:hover td { background: var(--bg-secondary); }
+  .dept-badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+
+  /* Loader */
+  .loader { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 20px; font-size: 13px; color: var(--text-secondary); }
+  .spinner { width: 16px; height: 16px; border: 2px solid var(--border-light); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Toast */
+  .toast { position: fixed; bottom: 20px; right: 20px; background: #1e1e1e; color: #fff; padding: 10px 16px; border-radius: var(--radius-md); font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.2s; pointer-events: none; display: flex; align-items: center; gap: 8px; }
+  .toast.show { opacity: 1; }
+  .toast.success { background: #1a3a12; }
+  .toast.error { background: #3a1212; }
+</style>
+</head>
+<body>
+
+<!-- ══════════ CONFIG SCREEN ══════════ -->
+<div id="config-screen">
+  <div class="config-card">
+    <h1>🔥 Firebase Setup</h1>
+    <p>Connect this system to your Firebase project. This is a one-time setup — paste your Firebase config below.</p>
+
+    <div class="config-step">
+      <h3><span class="step-num">1</span> Create a Firebase project</h3>
+      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">Go to <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent)">console.firebase.google.com</a> → New Project → disable Google Analytics → Create.</p>
+    </div>
+
+    <div class="config-step">
+      <h3><span class="step-num">2</span> Enable Firestore</h3>
+      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">In your project → Build → Firestore Database → Create database → Start in <strong>test mode</strong> → Choose a region → Done.</p>
+    </div>
+
+    <div class="config-step">
+      <h3><span class="step-num">3</span> Enable Email/Password Auth</h3>
+      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">Build → Authentication → Get Started → Email/Password → Enable → Save.</p>
+    </div>
+
+    <div class="config-step">
+      <h3><span class="step-num">4</span> Get your config</h3>
+      <p style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;">Project Settings (gear icon) → General → Your apps → Web app (&lt;/&gt;) → Register → Copy the firebaseConfig values below:</p>
+    </div>
+
+    <div class="firebase-inputs">
+      <div class="form-group"><label>API Key</label><input id="fc-apiKey" placeholder="AIzaSy..."></div>
+      <div class="form-group"><label>Auth Domain</label><input id="fc-authDomain" placeholder="your-app.firebaseapp.com"></div>
+      <div class="form-group"><label>Project ID</label><input id="fc-projectId" placeholder="your-project-id"></div>
+      <div class="form-group"><label>Storage Bucket</label><input id="fc-storageBucket" placeholder="your-app.appspot.com"></div>
+      <div class="form-group"><label>Messaging Sender ID</label><input id="fc-messagingSenderId" placeholder="123456789"></div>
+      <div class="form-group"><label>App ID</label><input id="fc-appId" placeholder="1:123:web:abc..."></div>
+    </div>
+    <div id="config-error" class="error-msg"></div>
+    <button class="btn btn-primary btn-block" onclick="saveConfig()"><i class="ti ti-database"></i> Save & Connect</button>
+    <div class="setup-info">
+      💡 Your config is saved in your browser's localStorage and never sent anywhere. Only Firebase itself is contacted. <a href="https://firebase.google.com/pricing" target="_blank">Firebase free tier</a> allows 1GB storage and 50K reads/day — more than enough for this system.
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ AUTH SCREEN ══════════ -->
+<div id="auth-screen" style="display:none;">
+  <div class="auth-card">
+    <h1>Task Reporting System</h1>
+    <p>Sign in to access your department dashboard</p>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('signin')">Sign In</button>
+      <button class="auth-tab" onclick="switchAuthTab('signup')">Create Account</button>
+    </div>
+    <div id="signin-form">
+      <div class="form-group"><label>Email</label><input type="email" id="si-email" placeholder="you@example.com"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="si-pass" placeholder="••••••••"></div>
+      <div id="signin-error" class="error-msg"></div>
+      <button class="btn btn-primary btn-block" onclick="doSignIn()"><i class="ti ti-login"></i> Sign In</button>
+    </div>
+    <div id="signup-form" style="display:none;">
+      <div class="form-group"><label>Full Name</label><input type="text" id="su-name" placeholder="Ayesha Khan"></div>
+      <div class="form-group"><label>Email</label><input type="email" id="su-email" placeholder="you@example.com"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="su-pass" placeholder="min. 6 characters"></div>
+      <div class="form-group"><label>Department</label>
+        <select id="su-dept" onchange="updateWingSelect()">
+          <option value="">Select department...</option>
+          <option>ANCRD</option>
+          <option>CMACED</option>
+          <option>International Office</option>
+          <option>Office of Employability</option>
+          <option>Office of Alumni</option>
+        </select>
+      </div>
+      <div class="form-group" id="wing-group" style="display:none;"><label>Wing / Desk</label>
+        <select id="su-wing">
+          <option value="">Select wing...</option>
+          <option>Research Communication Desk</option>
+          <option>Research Commercialization Desk</option>
+          <option>Postgraduate Desk</option>
+        </select>
+      </div>
+      <div id="signup-error" class="error-msg"></div>
+      <button class="btn btn-primary btn-block" onclick="doSignUp()"><i class="ti ti-user-plus"></i> Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MAIN APP ══════════ -->
+<div id="app">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <h1>Task Reporting</h1>
+        <p>Monthly Progress System</p>
+      </div>
+      <div class="sidebar-user">
+        <div class="user-avatar" id="sb-avatar">?</div>
+        <div class="user-info">
+          <div class="name" id="sb-name">Loading...</div>
+          <div class="role" id="sb-role">—</div>
+        </div>
+        <i class="ti ti-logout sidebar-signout" onclick="doSignOut()" title="Sign out"></i>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Navigation</div>
+        <div id="nav-mytasks" class="nav-item active" onclick="setView('mytasks')"><i class="ti ti-clipboard-list"></i> My Tasks</div>
+        <div id="nav-dailylog" class="nav-item" onclick="setView('dailylog')"><i class="ti ti-clock"></i> Daily Log</div>
+      </div>
+      <div class="nav-section" id="admin-nav" style="display:none;">
+        <div class="nav-label">Admin</div>
+        <div id="nav-dashboard" class="nav-item" onclick="setView('dashboard')"><i class="ti ti-layout-dashboard"></i> Overview Dashboard</div>
+        <div id="nav-allusers" class="nav-item" onclick="setView('allusers')"><i class="ti ti-users"></i> All Members</div>
+      </div>
+      <div class="nav-bottom">
+        <div class="nav-item" onclick="openChangePassword()"><i class="ti ti-key"></i> Change Password</div>
+      </div>
+    </div>
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-left">
+          <h2 id="tb-title">My Tasks</h2>
+          <span id="tb-badge" class="badge badge-blue"></span>
+        </div>
+        <div class="topbar-right">
+          <div class="month-nav">
+            <button onclick="changeMonth(-1)"><i class="ti ti-chevron-left"></i></button>
+            <span id="month-label">— —</span>
+            <button onclick="changeMonth(1)"><i class="ti ti-chevron-right"></i></button>
+          </div>
+          <button id="add-task-btn" class="btn btn-primary btn-sm" onclick="openAddTask()" style="display:none;"><i class="ti ti-plus"></i> Add Task</button>
+        </div>
+      </div>
+      <div class="content" id="main-content">
+        <div class="loader"><div class="spinner"></div> Loading...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MODAL ══════════ -->
+<div class="overlay" id="modal-overlay" style="display:none;" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modal-box"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, onSnapshot, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+// ── Org Structure ──
+const ORG = {
+  "ANCRD": { wings: ["Research Communication Desk","Research Commercialization Desk","Postgraduate Desk"] },
+  "CMACED": { wings: [] },
+  "International Office": { wings: [] },
+  "Office of Employability": { wings: [] },
+  "Office of Alumni": { wings: [] }
+};
+const DEPT_COLORS = { "ANCRD":"badge-blue","CMACED":"badge-green","International Office":"badge-purple","Office of Employability":"badge-blue","Office of Alumni":"badge-green" };
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+// ── State ──
+let app, auth, db;
+let currentUser = null;
+let userProfile = null;
+let view = 'mytasks';
+let selMonth = new Date().getMonth();
+let selYear = new Date().getFullYear();
+let selWeek = 1;
+let selMember = null;
+let allProfiles = [];
+let unsubscribers = [];
+
+// ── Init ──
+function initFirebase() {
+  const cfg = JSON.parse(localStorage.getItem('fbConfig') || 'null');
+  if (!cfg || !cfg.apiKey) { showScreen('config'); return; }
+  try {
+    app = initializeApp(cfg);
+    auth = getAuth(app);
+    db = getFirestore(app);
+    showScreen('auth');
+    onAuthStateChanged(auth, async user => {
+      if (user) {
+        currentUser = user;
+        await loadUserProfile(user.uid);
+        showApp();
+      } else {
+        currentUser = null;
+        userProfile = null;
+        showScreen('auth');
+      }
+    });
+  } catch(e) { showScreen('config'); }
+}
+
+function showScreen(s) {
+  document.getElementById('config-screen').style.display = s==='config' ? 'flex' : 'none';
+  document.getElementById('auth-screen').style.display = s==='auth' ? 'flex' : 'none';
+  document.getElementById('app').style.display = s==='app' ? 'flex' : 'none';
+}
+
+// ── Config ──
+window.saveConfig = function() {
+  const cfg = {
+    apiKey: document.getElementById('fc-apiKey').value.trim(),
+    authDomain: document.getElementById('fc-authDomain').value.trim(),
+    projectId: document.getElementById('fc-projectId').value.trim(),
+    storageBucket: document.getElementById('fc-storageBucket').value.trim(),
+    messagingSenderId: document.getElementById('fc-messagingSenderId').value.trim(),
+    appId: document.getElementById('fc-appId').value.trim()
+  };
+  if (!cfg.apiKey || !cfg.projectId) { showErr('config-error','Please fill in at least API Key and Project ID.'); return; }
+  localStorage.setItem('fbConfig', JSON.stringify(cfg));
+  location.reload();
+};
+
+// ── Auth ──
+window.switchAuthTab = function(tab) {
+  document.getElementById('signin-form').style.display = tab==='signin' ? 'block' : 'none';
+  document.getElementById('signup-form').style.display = tab==='signup' ? 'block' : 'none';
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (tab==='signin'&&i===0)||(tab==='signup'&&i===1)));
+};
+
+window.updateWingSelect = function() {
+  const dept = document.getElementById('su-dept').value;
+  document.getElementById('wing-group').style.display = dept==='ANCRD' ? 'block' : 'none';
+};
+
+window.doSignIn = async function() {
+  const email = document.getElementById('si-email').value.trim();
+  const pass = document.getElementById('si-pass').value;
+  try { await signInWithEmailAndPassword(auth, email, pass); }
+  catch(e) { showErr('signin-error', friendlyAuthError(e)); }
+};
+
+window.doSignUp = async function() {
+  const name = document.getElementById('su-name').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const pass = document.getElementById('su-pass').value;
+  const dept = document.getElementById('su-dept').value;
+  const wing = document.getElementById('su-wing').value;
+  if (!name||!email||!pass||!dept) { showErr('signup-error','Please fill all required fields.'); return; }
+  if (dept==='ANCRD'&&!wing) { showErr('signup-error','Please select your wing within ANCRD.'); return; }
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    await setDoc(doc(db,'users',cred.user.uid), { name, email, dept, wing: dept==='ANCRD'?wing:'', role:'member', createdAt: Date.now() });
+    toast('Account created! Welcome, '+name, 'success');
+  } catch(e) { showErr('signup-error', friendlyAuthError(e)); }
+};
+
+window.doSignOut = async function() { await signOut(auth); };
+
+async function loadUserProfile(uid) {
+  const snap = await getDoc(doc(db,'users',uid));
+  if (snap.exists()) { userProfile = { uid, ...snap.data() }; }
+  else { userProfile = { uid, name: currentUser.email, dept:'', wing:'', role:'member' }; }
+}
+
+// ── Show App ──
+async function showApp() {
+  showScreen('app');
+  const initials = (userProfile.name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('sb-avatar').textContent = initials;
+  document.getElementById('sb-name').textContent = userProfile.name || currentUser.email;
+  document.getElementById('sb-role').textContent = userProfile.wing || userProfile.dept || 'Member';
+  if (userProfile.role === 'admin') { document.getElementById('admin-nav').style.display = 'block'; }
+  updateMonthLabel();
+  setView('mytasks');
+}
+
+// ── View Router ──
+window.setView = function(v) {
+  view = v;
+  unsubAll();
+  const titles = { mytasks:'My Tasks', dailylog:'Daily Log', dashboard:'Overview Dashboard', allusers:'All Members' };
+  document.getElementById('tb-title').textContent = titles[v] || v;
+  ['mytasks','dailylog','dashboard','allusers'].forEach(x => {
+    const el = document.getElementById('nav-'+x);
+    if(el) el.classList.toggle('active', x===v);
+  });
+  document.getElementById('add-task-btn').style.display = v==='mytasks' ? 'inline-flex' : 'none';
+  if(v==='mytasks') renderMyTasks();
+  else if(v==='dailylog') renderDailyLog();
+  else if(v==='dashboard') renderDashboard();
+  else if(v==='allusers') renderAllUsers();
+};
+
+window.changeMonth = function(d) {
+  selMonth += d;
+  if(selMonth<0){selMonth=11;selYear--;} if(selMonth>11){selMonth=0;selYear++;}
+  updateMonthLabel();
+  setView(view);
+};
+
+function updateMonthLabel() { document.getElementById('month-label').textContent = MONTHS[selMonth]+' '+selYear; }
+function monthKey() { return selYear+'-'+(selMonth+1<10?'0':'')+(selMonth+1); }
+
+// ── My Tasks ──
+async function renderMyTasks() {
+  document.getElementById('tb-badge').textContent = userProfile.wing || userProfile.dept;
+  document.getElementById('tb-badge').className = 'badge '+(DEPT_COLORS[userProfile.dept]||'badge-blue');
+  setContent('<div class="loader"><div class="spinner"></div> Loading tasks...</div>');
+  const q = query(collection(db,'tasks'), where('uid','==',currentUser.uid), where('monthKey','==',monthKey()));
+  const unsub = onSnapshot(q, snap => {
+    const tasks = snap.docs.map(d=>({id:d.id,...d.data()}));
+    const totalTarget = tasks.reduce((s,t)=>s+parseFloat(t.targetHrs||0),0);
+    let html = `
+    <div class="stats-row">
+      <div class="stat-card"><div class="slabel">Monthly Target</div><div class="sval c-blue">${totalTarget}h</div><div class="ssub">Planned</div></div>
+      <div class="stat-card"><div class="slabel">Tasks Set</div><div class="sval c-purple">${tasks.length}</div><div class="ssub">${tasks.filter(t=>t.status==='done').length} completed</div></div>
+      <div class="stat-card"><div class="slabel">In Progress</div><div class="sval c-amber">${tasks.filter(t=>t.status==='progress').length}</div><div class="ssub">Active tasks</div></div>
+      <div class="stat-card"><div class="slabel">Todo</div><div class="sval c-green">${tasks.filter(t=>t.status==='todo').length}</div><div class="ssub">Not started</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="ti ti-target"></i> Monthly Tasks — Weekly Targets</div>
+      </div>
+      ${tasks.length===0 ? `<div class="empty-state"><i class="ti ti-clipboard"></i><p>No tasks yet. Click "Add Task" to set your monthly targets.</p></div>` : `
+      <div class="task-header-row"><span>Task</span><span>Monthly Hrs</span><span>Week ${selWeek} Target</span><span>Status</span><span>Actions</span></div>
+      <div id="task-rows">`}
+      ${tasks.map(t=>{
+        const wt = parseFloat((t.weeks||[])[selWeek-1]||0);
+        return `<div class="task-data-row">
+          <div><div class="task-name">${esc(t.name)}</div><div class="task-desc">${esc(t.desc||'')}</div>
+          <div class="prog-bar"><div class="prog-fill" style="width:${t.status==='done'?100:t.status==='progress'?50:0}%"></div></div></div>
+          <div class="task-num">${t.targetHrs}h</div>
+          <div class="task-num">${wt}h</div>
+          <div><span class="status-pill s-${t.status}" onclick="cycleStatus('${t.id}','${t.status}')">${t.status==='todo'?'Todo':t.status==='progress'?'In Progress':'Done'}</span></div>
+          <div style="display:flex;gap:5px;justify-content:center;">
+            <button class="btn btn-sm" onclick="openEditTask('${t.id}')" title="Edit"><i class="ti ti-edit"></i></button>
+            <button class="btn btn-sm" style="color:var(--danger)" onclick="deleteTask('${t.id}')" title="Delete"><i class="ti ti-trash"></i></button>
+          </div>
+        </div>`;
+      }).join('')}
+      ${tasks.length>0 ? '</div></div>' : ''}
+    `;
+    setContent(html);
+  });
+  unsubscribers.push(unsub);
+}
+
+window.cycleStatus = async function(id, current) {
+  const next = current==='todo'?'progress':current==='progress'?'done':'todo';
+  await updateDoc(doc(db,'tasks',id), { status: next });
+  toast('Status updated to '+next, 'success');
+};
+
+window.deleteTask = async function(id) {
+  if(!confirm('Delete this task?')) return;
+  await deleteDoc(doc(db,'tasks',id));
+  toast('Task deleted');
+};
+
+// ── Add / Edit Task ──
+window.openAddTask = function() {
+  showModal(`<h3><i class="ti ti-plus"></i> Add Monthly Task</h3>
+    <div class="form-group"><label>Task Name *</label><input id="t-name" placeholder="e.g. Research Newsletter Q3"></div>
+    <div class="form-group"><label>Description</label><textarea id="t-desc" placeholder="Brief description..."></textarea></div>
+    <div class="grid-2">
+      <div class="form-group"><label>Monthly Hours *</label><input type="number" id="t-hrs" min="1" max="300" placeholder="20"></div>
+      <div class="form-group"><label>Status</label><select id="t-status"><option value="todo">Todo</option><option value="progress">In Progress</option><option value="done">Done</option></select></div>
+    </div>
+    <hr class="divider">
+    <p style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--text-secondary);">Weekly Hour Breakdown</p>
+    <div class="grid-4">
+      <div class="form-group"><label>Week 1</label><input type="number" id="w1" min="0" max="80" placeholder="0" oninput="updateWeekSum()"></div>
+      <div class="form-group"><label>Week 2</label><input type="number" id="w2" min="0" max="80" placeholder="0" oninput="updateWeekSum()"></div>
+      <div class="form-group"><label>Week 3</label><input type="number" id="w3" min="0" max="80" placeholder="0" oninput="updateWeekSum()"></div>
+      <div class="form-group"><label>Week 4</label><input type="number" id="w4" min="0" max="80" placeholder="0" oninput="updateWeekSum()"></div>
+    </div>
+    <div id="week-sum-msg" class="week-sum"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveNewTask()"><i class="ti ti-check"></i> Save Task</button>
+    </div>`);
+};
+
+window.updateWeekSum = function() {
+  const total = [1,2,3,4].reduce((s,i)=>s+parseFloat(document.getElementById('w'+i)?.value||0),0);
+  const target = parseFloat(document.getElementById('t-hrs')?.value||0);
+  const el = document.getElementById('week-sum-msg');
+  if(!el) return;
+  el.textContent = `Weekly sum: ${total}h${target>0?' of '+target+'h total':''}`;
+  el.className = 'week-sum '+(total===target&&target>0?'ok':total>target?'warn':'');
+};
+
+window.saveNewTask = async function() {
+  const name = document.getElementById('t-name').value.trim();
+  const hrs = parseFloat(document.getElementById('t-hrs').value||0);
+  if(!name||!hrs) { alert('Task name and hours are required.'); return; }
+  const weeks = [1,2,3,4].map(i=>parseFloat(document.getElementById('w'+i).value||0));
+  await setDoc(doc(collection(db,'tasks')), {
+    uid: currentUser.uid, name, desc: document.getElementById('t-desc').value.trim(),
+    targetHrs: hrs, weeks, status: document.getElementById('t-status').value,
+    dept: userProfile.dept, wing: userProfile.wing, memberName: userProfile.name,
+    monthKey: monthKey(), createdAt: Date.now()
+  });
+  closeModal(); toast('Task saved!', 'success');
+};
+
+window.openEditTask = async function(id) {
+  const snap = await getDoc(doc(db,'tasks',id));
+  if(!snap.exists()) return;
+  const t = snap.data();
+  showModal(`<h3><i class="ti ti-edit"></i> Edit Task</h3>
+    <div class="form-group"><label>Task Name *</label><input id="t-name" value="${esc(t.name)}"></div>
+    <div class="form-group"><label>Description</label><textarea id="t-desc">${esc(t.desc||'')}</textarea></div>
+    <div class="grid-2">
+      <div class="form-group"><label>Monthly Hours *</label><input type="number" id="t-hrs" value="${t.targetHrs}" min="1" max="300"></div>
+      <div class="form-group"><label>Status</label><select id="t-status"><option value="todo" ${t.status==='todo'?'selected':''}>Todo</option><option value="progress" ${t.status==='progress'?'selected':''}>In Progress</option><option value="done" ${t.status==='done'?'selected':''}>Done</option></select></div>
+    </div>
+    <hr class="divider">
+    <p style="font-size:12px;font-weight:600;margin-bottom:8px;color:var(--text-secondary);">Weekly Hour Breakdown</p>
+    <div class="grid-4">
+      ${[1,2,3,4].map(i=>`<div class="form-group"><label>Week ${i}</label><input type="number" id="w${i}" value="${(t.weeks||[])[i-1]||0}" min="0" max="80" oninput="updateWeekSum()"></div>`).join('')}
+    </div>
+    <div id="week-sum-msg" class="week-sum"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditTask('${id}')"><i class="ti ti-check"></i> Update Task</button>
+    </div>`);
+};
+
+window.saveEditTask = async function(id) {
+  const name = document.getElementById('t-name').value.trim();
+  const hrs = parseFloat(document.getElementById('t-hrs').value||0);
+  if(!name||!hrs) { alert('Task name and hours are required.'); return; }
+  const weeks = [1,2,3,4].map(i=>parseFloat(document.getElementById('w'+i).value||0));
+  await updateDoc(doc(db,'tasks',id), { name, desc: document.getElementById('t-desc').value.trim(), targetHrs: hrs, weeks, status: document.getElementById('t-status').value });
+  closeModal(); toast('Task updated!', 'success');
+};
+
+// ── Daily Log ──
+async function renderDailyLog() {
+  document.getElementById('tb-badge').textContent = MONTHS[selMonth];
+  document.getElementById('tb-badge').className = 'badge badge-blue';
+  setContent('<div class="loader"><div class="spinner"></div> Loading...</div>');
+  const q = query(collection(db,'tasks'), where('uid','==',currentUser.uid), where('monthKey','==',monthKey()));
+  const taskSnap = await getDocs(q);
+  const tasks = taskSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const days = ['Mon','Tue','Wed','Thu','Fri'];
+  const logKey = `${currentUser.uid}|${monthKey()}|w${selWeek}`;
+  const logRef = doc(db,'dailylogs',logKey);
+  const logSnap = await getDoc(logRef);
+  let logs = logSnap.exists() ? logSnap.data().entries || {} : {};
+
+  function buildTable() {
+    if(tasks.length===0) return `<div class="empty-state"><i class="ti ti-calendar-off"></i><p>Set your monthly tasks first to log daily hours.</p></div>`;
+    let dayTotals = {}; days.forEach(d=>{dayTotals[d]=0;});
+    let rows = tasks.map(t => {
+      let rowTotal = 0;
+      const cells = days.map(d=>{
+        const v = parseFloat((logs[t.id]||{})[d]||0);
+        rowTotal+=v; dayTotals[d]+=v;
+        return `<td><input class="time-inp" type="number" min="0" max="24" step="0.5" value="${v||''}" placeholder="—" onchange="logTime('${t.id}','${d}',this.value,'${logKey}')"></td>`;
+      }).join('');
+      return `<tr><td>${esc(t.name)}</td>${cells}<td style="font-weight:600;color:var(--accent);">${rowTotal.toFixed(1)}h</td></tr>`;
+    }).join('');
+    const footCells = days.map(d=>{
+      const v = dayTotals[d];
+      return `<td style="color:${v>8?'var(--danger)':v>0?'var(--success)':'var(--text-tertiary)'}">${v>0?v.toFixed(1)+'h':'—'}</td>`;
+    }).join('');
+    const weekTotal = Object.values(dayTotals).reduce((s,v)=>s+v,0);
+    return `<table class="log-table">
+      <thead><tr><th>Task</th>${days.map(d=>`<th>${d}</th>`).join('')}<th>Total</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td>Day total</td>${footCells}<td style="color:var(--accent)">${weekTotal.toFixed(1)}h</td></tr></tfoot>
+    </table>
+    ${weekTotal>40?`<div style="margin-top:10px;padding:9px 12px;background:var(--warning-bg);border-radius:var(--radius-md);font-size:12px;color:var(--warning);"><i class="ti ti-alert-triangle" style="margin-right:6px;"></i>Weekly hours exceed 40h — please review your log.</div>`:''}`;
+  }
+
+  const weekTabsHtml = [1,2,3,4].map(w=>`<div class="week-tab ${selWeek===w?'active':''}" onclick="changeWeek(${w})">${MONTHS[selMonth].slice(0,3)} Week ${w}</div>`).join('');
+  setContent(`
+    <div class="card">
+      <div class="card-header"><div class="card-title"><i class="ti ti-clock"></i> Daily Time Log</div></div>
+      <div class="week-tabs">${weekTabsHtml}</div>
+      <div id="log-table-wrap">${buildTable()}</div>
+    </div>
+  `);
+
+  window.logTime = async function(taskId, day, val, lk) {
+    if(!logs[taskId]) logs[taskId]={};
+    logs[taskId][day] = parseFloat(val)||0;
+    await setDoc(doc(db,'dailylogs',lk), { uid:currentUser.uid, monthKey:monthKey(), week:selWeek, entries:logs, updatedAt:Date.now() }, {merge:true});
+    document.getElementById('log-table-wrap').innerHTML = buildTable();
+    toast('Saved', 'success');
+  };
+
+  window.changeWeek = function(w) { selWeek=w; renderDailyLog(); };
+}
+
+// ── Dashboard ──
+async function renderDashboard() {
+  document.getElementById('tb-badge').textContent = MONTHS[selMonth]+' '+selYear;
+  document.getElementById('tb-badge').className = 'badge badge-purple';
+  setContent('<div class="loader"><div class="spinner"></div> Loading all data...</div>');
+  const [taskSnap, usersSnap] = await Promise.all([
+    getDocs(query(collection(db,'tasks'), where('monthKey','==',monthKey()))),
+    getDocs(collection(db,'users'))
+  ]);
+  const tasks = taskSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const users = usersSnap.docs.map(d=>({uid:d.id,...d.data()}));
+  const deptStats = {};
+  users.forEach(u=>{
+    const key = u.dept+(u.wing?' / '+u.wing:'');
+    if(!deptStats[key]) deptStats[key]={dept:u.dept,wing:u.wing,members:0,tasks:0,target:0};
+    deptStats[key].members++;
+  });
+  tasks.forEach(t=>{
+    const u = users.find(x=>x.uid===t.uid);
+    if(!u) return;
+    const key = u.dept+(u.wing?' / '+u.wing:'');
+    if(!deptStats[key]) deptStats[key]={dept:u.dept,wing:u.wing,members:0,tasks:0,target:0};
+    deptStats[key].tasks++;
+    deptStats[key].target+=parseFloat(t.targetHrs||0);
+  });
+  const totalTasks=tasks.length, totalHrs=tasks.reduce((s,t)=>s+parseFloat(t.targetHrs||0),0), completedTasks=tasks.filter(t=>t.status==='done').length;
+  setContent(`
+  <div class="stats-row">
+    <div class="stat-card"><div class="slabel">Active Members</div><div class="sval c-blue">${users.length}</div><div class="ssub">Registered</div></div>
+    <div class="stat-card"><div class="slabel">Total Tasks</div><div class="sval c-purple">${totalTasks}</div><div class="ssub">${completedTasks} completed</div></div>
+    <div class="stat-card"><div class="slabel">Target Hours</div><div class="sval c-amber">${totalHrs}h</div><div class="ssub">This month</div></div>
+    <div class="stat-card"><div class="slabel">Completion Rate</div><div class="sval c-green">${totalTasks>0?Math.round(completedTasks/totalTasks*100):0}%</div><div class="ssub">Of all tasks</div></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title"><i class="ti ti-chart-bar"></i> Department / Wing Summary</div></div>
+    <table class="dash-table">
+      <thead><tr><th>Department / Wing</th><th>Members</th><th>Tasks</th><th>Target Hours</th><th>Task Progress</th></tr></thead>
+      <tbody>
+        ${Object.entries(deptStats).map(([key,s])=>{
+          const dtasks=tasks.filter(t=>{const u=users.find(x=>x.uid===t.uid);return u&&u.dept===s.dept&&u.wing===s.wing;});
+          const done=dtasks.filter(t=>t.status==='done').length;
+          const pct=dtasks.length>0?Math.round(done/dtasks.length*100):0;
+          return `<tr>
+            <td><span class="dept-badge ${DEPT_COLORS[s.dept]||'badge-blue'}">${s.dept}</span>&nbsp; ${s.wing||''}</td>
+            <td>${s.members}</td><td>${s.tasks}</td><td>${s.target}h</td>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div style="flex:1;height:4px;background:var(--bg-tertiary);border-radius:2px;"><div style="width:${pct}%;height:100%;background:var(--accent);border-radius:2px;"></div></div><span style="font-size:11px;color:var(--text-secondary);min-width:28px;">${pct}%</span></div></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`);
+}
+
+// ── All Users ──
+async function renderAllUsers() {
+  document.getElementById('tb-badge').textContent = 'Admin';
+  document.getElementById('tb-badge').className = 'badge badge-purple';
+  setContent('<div class="loader"><div class="spinner"></div> Loading members...</div>');
+  const [taskSnap, usersSnap] = await Promise.all([
+    getDocs(query(collection(db,'tasks'), where('monthKey','==',monthKey()))),
+    getDocs(collection(db,'users'))
+  ]);
+  const tasks = taskSnap.docs.map(d=>({id:d.id,...d.data()}));
+  const users = usersSnap.docs.map(d=>({uid:d.id,...d.data()})).sort((a,b)=>a.dept.localeCompare(b.dept));
+  setContent(`
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="ti ti-users"></i> All Team Members — ${MONTHS[selMonth]} ${selYear}</div>
+    </div>
+    <table class="dash-table">
+      <thead><tr><th>Name</th><th>Department</th><th>Wing / Desk</th><th>Email</th><th>Tasks</th><th>Target Hrs</th><th>Completed</th></tr></thead>
+      <tbody>
+        ${users.map(u=>{
+          const utasks=tasks.filter(t=>t.uid===u.uid);
+          const done=utasks.filter(t=>t.status==='done').length;
+          const hrs=utasks.reduce((s,t)=>s+parseFloat(t.targetHrs||0),0);
+          const initials=(u.name||'?').split(' ').map(x=>x[0]).join('').toUpperCase().slice(0,2);
+          return `<tr>
+            <td><div style="display:flex;align-items:center;gap:8px;"><div class="mini-avatar" style="width:26px;height:26px;font-size:10px;">${initials}</div><span style="font-weight:500;">${esc(u.name||u.email)}</span></div></td>
+            <td><span class="dept-badge ${DEPT_COLORS[u.dept]||'badge-blue'}">${u.dept}</span></td>
+            <td style="color:var(--text-secondary);font-size:12px;">${u.wing||'—'}</td>
+            <td style="color:var(--text-secondary);font-size:12px;">${esc(u.email||'')}</td>
+            <td style="text-align:center;">${utasks.length}</td>
+            <td style="text-align:center;font-weight:500;">${hrs}h</td>
+            <td style="text-align:center;"><span class="status-pill ${done===utasks.length&&utasks.length>0?'s-done':done>0?'s-progress':'s-todo'}">${done}/${utasks.length}</span></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`);
+}
+
+// ── Change Password ──
+window.openChangePassword = function() {
+  showModal(`<h3><i class="ti ti-key"></i> Change Password</h3>
+    <div class="form-group"><label>Current Password</label><input type="password" id="cp-current" placeholder="••••••••"></div>
+    <div class="form-group"><label>New Password</label><input type="password" id="cp-new" placeholder="min. 6 characters"></div>
+    <div class="form-group"><label>Confirm New Password</label><input type="password" id="cp-confirm" placeholder="••••••••"></div>
+    <div id="cp-error" class="error-msg"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="doChangePassword()"><i class="ti ti-check"></i> Update Password</button>
+    </div>`);
+};
+
+window.doChangePassword = async function() {
+  const current = document.getElementById('cp-current').value;
+  const np = document.getElementById('cp-new').value;
+  const conf = document.getElementById('cp-confirm').value;
+  if(np!==conf) { showErr('cp-error','New passwords do not match.'); return; }
+  if(np.length<6) { showErr('cp-error','Password must be at least 6 characters.'); return; }
+  try {
+    const cred = EmailAuthProvider.credential(currentUser.email, current);
+    await reauthenticateWithCredential(currentUser, cred);
+    await updatePassword(currentUser, np);
+    closeModal(); toast('Password updated!', 'success');
+  } catch(e) { showErr('cp-error', friendlyAuthError(e)); }
+};
+
+// ── Helpers ──
+function setContent(html) { document.getElementById('main-content').innerHTML = html; }
+function showModal(html) { document.getElementById('modal-box').innerHTML = html; document.getElementById('modal-overlay').style.display='flex'; }
+window.closeModal = function() { document.getElementById('modal-overlay').style.display='none'; };
+function showErr(id, msg) { const el=document.getElementById(id); if(el){el.textContent=msg;el.style.display='block';} }
+function unsubAll() { unsubscribers.forEach(u=>u()); unsubscribers=[]; }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function friendlyAuthError(e) {
+  const m = { 'auth/wrong-password':'Incorrect password.','auth/user-not-found':'No account found with this email.','auth/email-already-in-use':'An account with this email already exists.','auth/weak-password':'Password must be at least 6 characters.','auth/invalid-email':'Invalid email address.','auth/too-many-requests':'Too many attempts. Please try again later.','auth/invalid-credential':'Incorrect email or password.' };
+  return m[e.code] || e.message;
+}
+function toast(msg, type='') {
+  const t=document.getElementById('toast');
+  t.innerHTML=`<i class="ti ti-${type==='success'?'check':'info-circle'}"></i> ${msg}`;
+  t.className='toast show '+(type||'');
+  setTimeout(()=>t.className='toast',2500);
+}
+
+initFirebase();
+</script>
+</body>
+</html>
